@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    container_name: rag-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - rag_index:/app/storage/index
+      - rag_uploads:/app/storage/uploads
+    depends_on:
+      - ollama
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+volumes:
+  rag_index:
+  rag_uploads:
+  ollama_models:
