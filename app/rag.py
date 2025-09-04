@@ -20,11 +20,11 @@ def _split_docs(pages) -> List:
 
 def ingest_pdf(file_path: str) -> int:
     loader = PyPDFLoader(file_path)
-    pages = loader.load()  # ogni pagina ha metadata {"source":..., "page":...}
+    pages = loader.load()  # page has {"source":..., "page":...}
     for d in pages:
-        # Rendi il path più corto come "source"
+        # path short come "source"
         d.metadata["source"] = os.path.basename(d.metadata.get("source", os.path.basename(file_path)))
-        # assicura che "page" parta da 1
+        # page start from 1
         if "page" in d.metadata:
             d.metadata["page"] = int(d.metadata["page"]) + 1
     chunks = _split_docs(pages)

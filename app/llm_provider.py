@@ -5,7 +5,7 @@ from .config import settings
 from .prompt import SYSTEM_INSTRUCTION, USER_TEMPLATE
 
 def build_prompt(question: str, context: str) -> str:
-    # Prompt unico (funziona per Ollama generate/chat e per OpenAI chat)
+    # Prompt unico
     return f"{SYSTEM_INSTRUCTION}\n\n" + USER_TEMPLATE.format(question=question, context=context)
 
 def openai_chat(prompt: str) -> str:
@@ -29,6 +29,7 @@ def openai_chat(prompt: str) -> str:
     return r.json()["choices"][0]["message"]["content"]
 
 def ollama_chat(prompt: str) -> str:
+    #2 endpoints
     url = f"{settings.OLLAMA_BASE_URL}/api/chat"
     body = {"model": settings.LLM_MODEL, "messages": [{"role": "user", "content": prompt}], "stream": False}
     r = requests.post(url, json=body, timeout=300)

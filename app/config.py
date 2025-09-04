@@ -9,7 +9,7 @@ class Settings:
     TOP_K = int(os.getenv("TOP_K", "4"))
 
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")  # "openai" | "ollama"
-    LLM_MODEL = os.getenv("LLM_MODEL", "llama3.2:1b")   # es. "gpt-4o-mini" se openai
+    LLM_MODEL = os.getenv("LLM_MODEL", "llama3.2:1b")   # es. "gpt-4o-mini"
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
     OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434") #OLLAMA_BASE_URL=http://ollama:11434
 
