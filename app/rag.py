@@ -1,13 +1,42 @@
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from .config import settings
 
-def _embedding():
-    return HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL, model_kwargs={"device": "cpu"})
+# Global state
+_embeddings = None
+_vector_store = None
+
+def get_embeddings():
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL, model_kwargs={"device": "cpu"})
+    return _embeddings
+
+def get_vector_store():
+    global _vector_store
+    if _vector_store is None:
+        embeddings = get_embeddings()
+        if os.path.isdir(settings.INDEX_DIR) and os.listdir(settings.INDEX_DIR):
+             try:
+                _vector_store = FAISS.load_local(settings.INDEX_DIR, embeddings, allow_dangerous_deserialization=True)
+             except Exception as e:
+                 print(f"Failed to load index: {e}, creating new one.")
+                 # Initialize empty if load fails? Or better to let it be None and created on ingest?
+                 # But ingest assumes we can add to existing.
+                 # Let's handle initialization when needed.
+                 pass
+    return _vector_store
+
+def initialize_rag():
+    """Initializes the RAG components (embeddings and vector store) into memory."""
+    print("Initializing RAG engine...")
+    get_embeddings()
+    get_vector_store()
+    print("RAG engine initialized.")
 
 def _split_docs(pages) -> List:
     splitter = RecursiveCharacterTextSplitter(
@@ -19,6 +48,7 @@ def _split_docs(pages) -> List:
     return splitter.split_documents(pages)
 
 def ingest_pdf(file_path: str) -> int:
+    global _vector_store
     loader = PyPDFLoader(file_path)
     pages = loader.load()  # page has {"source":..., "page":...}
     for d in pages:
@@ -29,17 +59,26 @@ def ingest_pdf(file_path: str) -> int:
             d.metadata["page"] = int(d.metadata["page"]) + 1
     chunks = _split_docs(pages)
 
-    if os.path.isdir(settings.INDEX_DIR) and os.listdir(settings.INDEX_DIR):
-        vs = FAISS.load_local(settings.INDEX_DIR, _embedding(), allow_dangerous_deserialization=True)
-        vs.add_documents(chunks)
+    # Ensure vector store is loaded
+    vs = get_vector_store()
+
+    if vs is None:
+        # Create new if doesn't exist
+        vs = FAISS.from_documents(chunks, get_embeddings())
+        _vector_store = vs
     else:
-        vs = FAISS.from_documents(chunks, _embedding())
+        vs.add_documents(chunks)
+
     vs.save_local(settings.INDEX_DIR)
     return len(chunks)
 
 def retrieve(query: str, k: int = None) -> List[Tuple[str, dict, float]]:
     k = k or settings.TOP_K
-    vs = FAISS.load_local(settings.INDEX_DIR, _embedding(), allow_dangerous_deserialization=True)
+    vs = get_vector_store()
+    if vs is None:
+        # Index empty
+        return []
+
     results = vs.similarity_search_with_score(query, k=k)
     # results: List[(Document, score)]
     triples = []

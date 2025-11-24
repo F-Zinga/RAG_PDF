@@ -1,8 +1,3 @@
-FROM ubuntu:latest
-LABEL authors="zinga"
-
-ENTRYPOINT ["top", "-b"]
-
 FROM python:3.11-slim
 
 # Evita prompt interattivi
