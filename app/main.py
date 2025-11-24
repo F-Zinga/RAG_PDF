@@ -3,10 +3,14 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.responses import JSONResponse
 from typing import Optional
 from .config import settings
-from .rag import ingest_pdf, retrieve, format_context
+from .rag import ingest_pdf, retrieve, format_context, initialize_rag
 from .llm_provider import generate_answer
 
 app = FastAPI(title="RAG PDF QA", version="1.0")
+
+@app.on_event("startup")
+async def startup_event():
+    initialize_rag()
 
 @app.get("/health")
 def health():

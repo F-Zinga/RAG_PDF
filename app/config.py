@@ -1,8 +1,21 @@
 import os
 
 class Settings:
-    INDEX_DIR = "./index"
-    UPLOAD_DIR = "./uploads"
+    # Allow env var overrides, default to Docker paths if not set, or local defaults if running locally
+    # Ideally, for local dev without docker, one might want ./index.
+    # But to match Dockerfile logic, let's use the env vars if provided.
+    INDEX_DIR = os.getenv("INDEX_DIR", "/app/storage/index")
+    UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/app/storage/uploads")
+
+    # If running locally without /app existing, fallback to relative paths could be useful
+    # but let's stick to the plan of aligning with Docker.
+    # Users running locally should set env vars or we can check if /app exists.
+    # A safer default for local dev might be "./storage/index"
+    if not os.path.exists("/app") and INDEX_DIR == "/app/storage/index":
+         INDEX_DIR = "./storage/index"
+    if not os.path.exists("/app") and UPLOAD_DIR == "/app/storage/uploads":
+         UPLOAD_DIR = "./storage/uploads"
+
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
     CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
     CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "150"))

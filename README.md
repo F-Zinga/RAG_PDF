@@ -25,18 +25,21 @@ Dockerized for easy deployment.
 
 ## ▶️ Usage
 
-### 1. Ingest PDFs
-
- ```
- python app/ingest.py data/mydoc.pdf
- ```
-
-### 2. Start API
+### 1. Start API
 
  ```
 bash
-uvicorn app.api:app --reload
+uvicorn app.main:app --reload
  ```
+
+### 2. Ingest PDFs
+
+Use the `/ingest` endpoint to upload PDF documents.
+
+ ```
+ curl -X POST "http://127.0.0.1:8000/ingest" -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "file=@/path/to/your/document.pdf"
+ ```
+
 ### 3. Test Endpoints
 
 - Interface → http://127.0.0.1:8000/docs
@@ -53,8 +56,9 @@ uvicorn app.api:app --reload
 
 Build and run:
 
-docker build -t rag-pdf .
-docker run -p 8000:8000 rag-pdf
+ ```
+docker compose up --build
+ ```
 
 ## 📌 Notes
 
